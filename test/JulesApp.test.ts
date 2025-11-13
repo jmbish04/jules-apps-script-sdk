@@ -1,7 +1,85 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import './mocks'; // MUST import this first to set up global.UrlFetchApp
-import { JulesApp } from '../src/index'; // Imports your library source
-import { mockUrlFetchApp } from './mocks';
+import { mockUrlFetchApp, mockPropertiesService } from './mocks'; // Import the new mock
+import { JulesApp } from '../src/index';
+
+describe('JulesApp Auth Resolution', () => {
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    // Reset the internal config of the library implicitly by not calling setApiKey yet
+    // We can clear it by setting it to empty string if the implementation allows,
+    // but since _config is module-level, we need to be careful.
+    // The implementation does `_config = { apiKey: key }`.
+    // To "unset" it effectively for the tests, we can pass a key but we want to test the NULL case.
+    // Ideally we would expose a reset method, but for now let's assume we start fresh or can override.
+
+    // Wait! The module state persists across tests in the same file.
+    // We must ensure we clear the config.
+    // Let's assume we can "reset" by setting it to empty string, BUT the logic is `if (_config && _config.apiKey)`.
+    // So `apiKey: ''` is falsy, which falls through to properties.
+    JulesApp.setApiKey('');
+  });
+
+  it('should use Script Properties if no setApiKey is called', () => {
+    // 1. Setup Property Mock
+    const mockProps = mockPropertiesService.getScriptProperties();
+    mockProps.getProperty.mockReturnValue('PROP_KEY_123');
+
+    // 2. Setup Fetch Mock
+    mockUrlFetchApp.fetch.mockReturnValue({
+      getResponseCode: () => 200,
+      getContentText: () => JSON.stringify({ id: '123' })
+    });
+
+    // 3. Call createSession WITHOUT setApiKey (we cleared it in beforeEach)
+    JulesApp.createSession({ prompt: 'foo', sourceContext: { source: 'sources/s' } });
+
+    // 4. Expect fetch to use the property key
+    expect(mockUrlFetchApp.fetch).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        headers: { 'X-Goog-Api-Key': 'PROP_KEY_123' }
+      })
+    );
+  });
+
+  it('should prioritize setApiKey over Script Properties', () => {
+    // 1. Setup Property Mock (Should be ignored)
+    const mockProps = mockPropertiesService.getScriptProperties();
+    mockProps.getProperty.mockReturnValue('PROP_KEY_123');
+
+    // 2. Explicitly set key
+    JulesApp.setApiKey('EXPLICIT_KEY_999');
+
+    // 3. Setup Fetch Mock
+    mockUrlFetchApp.fetch.mockReturnValue({
+      getResponseCode: () => 200,
+      getContentText: () => JSON.stringify({ id: '123' })
+    });
+
+    JulesApp.createSession({ prompt: 'foo', sourceContext: { source: 'sources/s' } });
+
+    // 4. Expect fetch to use the explicit key
+    expect(mockUrlFetchApp.fetch).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        headers: { 'X-Goog-Api-Key': 'EXPLICIT_KEY_999' }
+      })
+    );
+  });
+
+  it('should throw if neither are present', () => {
+    // 1. Ensure Property returns null
+    const mockProps = mockPropertiesService.getScriptProperties();
+    mockProps.getProperty.mockReturnValue(null);
+
+    // 2. Ensure Config is null (cleared in beforeEach)
+
+    expect(() => {
+      JulesApp.createSession({ prompt: 'foo', sourceContext: { source: 'sources/s' } });
+    }).toThrow('API Key missing');
+  });
+});
 
 describe('JulesApp SDK', () => {
   const API_KEY = 'test-api-key';
