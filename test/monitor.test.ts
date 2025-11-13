@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { mockUrlFetchApp } from './mocks'; // Your global mock setup
-import { JulesApp } from '../src/index';
+import * as JulesApp from '../src/index';
 
 describe('JulesApp Polling Logic', () => {
   // 1. Time Travel Setup

@@ -1,6 +1,9 @@
 const { build } = require("esbuild");
 const { GasPlugin } = require("esbuild-gas-plugin");
 
+const fs = require("fs");
+fs.copyFileSync("appsscript.json", "dist/appsscript.json");
+
 build({
   entryPoints: ["src/index.ts"],
   bundle: true,

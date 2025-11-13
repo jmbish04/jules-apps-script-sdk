@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { mockUrlFetchApp, mockPropertiesService } from './mocks'; // Import the new mock
-import { JulesApp } from '../src/index';
+import * as JulesApp from '../src/index';
 
 describe('JulesApp Auth Resolution', () => {
 
