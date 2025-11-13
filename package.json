@@ -1,0 +1,33 @@
+{
+  "name": "app",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "node build.js",
+    "push": "npm run build && clasp push",
+    "watch": "node build.js --watch",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/davideast/jules-app-script-sdk.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/davideast/jules-app-script-sdk/issues"
+  },
+  "homepage": "https://github.com/davideast/jules-app-script-sdk#readme",
+  "devDependencies": {
+    "@google/clasp": "^3.1.1",
+    "@types/google-apps-script": "^2.0.7",
+    "esbuild": "^0.27.0",
+    "esbuild-gas-plugin": "^0.10.0",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.8"
+  }
+}
