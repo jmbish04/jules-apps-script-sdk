@@ -7,6 +7,22 @@ A powerful, idiomatic client library for accessing the Jules API directly from G
 *   **Native Polling:** Native `waitFor` and `monitor` methods allow for synchronous event handling within the Apps Script execution model.
 *   **Type-Safe:** Distributed as a standard GAS library with comprehensive JSDoc.
 
+## Core Usage
+
+```javascript
+function startJulesSession() {
+  var session = JulesApp.createSession({
+    prompt: "Refactor the user login module.",
+    sourceContext: {
+      source: "sources/github/your-org/your-repo"
+    }
+  });
+
+  Logger.log("Session Created: " + session.id);
+  Logger.log("View in Dashboard: " + session.url);
+}
+```
+
 ## Installation
 
 ### 1. Add the Library
@@ -29,29 +45,9 @@ The most secure way to use JulesApp is to store your key in the project settings
     *   **Value**: `YOUR_ACTUAL_API_KEY`
 4.  Click **Save script properties**.
 
+Once the property is set, you can start using the library without initialization code.
+
 *Alternatively, you can set the key programmatically using `JulesApp.setApiKey('...')`.*
-
-## Quick Start
-
-Once the property is set, you can start using the library immediately without initialization code.
-
-```javascript
-function startJulesSession() {
-  // No auth setup needed if JULES_API_KEY is set in properties!
-
-  // Create a Session
-  var session = JulesApp.createSession({
-    prompt: "Refactor the user login module.",
-    sourceContext: {
-      // Replace with your actual source resource name
-      source: "sources/github/your-org/your-repo"
-    }
-  });
-
-  Logger.log("Session Created: " + session.id);
-  Logger.log("View in Dashboard: " + session.url);
-}
-```
 
 ## Waiting & Monitoring
 
