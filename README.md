@@ -9,17 +9,29 @@ A powerful, idiomatic client library for accessing the Jules API directly from G
 
 ## Core Usage
 
+The most common use case is creating a session with a prompt and waiting for the agent to complete the task.
+
 ```javascript
 function startJulesSession() {
-  var session = JulesApp.createSession({
+  // Create a session to refactor the user login module in a specific repository.
+  const session = JulesApp.createSession({
     prompt: "Refactor the user login module.",
     sourceContext: {
       source: "sources/github/your-org/your-repo"
     }
   });
 
-  Logger.log("Session Created: " + session.id);
-  Logger.log("View in Dashboard: " + session.url);
+  console.log("Session Created: " + session.name);
+  console.log("View in Dashboard: " + session.url);
+
+  // Wait for the session to complete (or fail).
+  const activity = JulesApp.waitFor(session.name, JulesApp.until.finished);
+
+  if (JulesApp.until.completed(activity)) {
+    console.log("Session completed successfully!");
+  } else {
+    console.log("Session failed.");
+  }
 }
 ```
 
@@ -49,118 +61,115 @@ Once the property is set, you can start using the library without initialization
 
 *Alternatively, you can set the key programmatically using `JulesApp.setApiKey('...')`.*
 
-## Waiting & Monitoring
 
-Google Apps Script is synchronous. `JulesApp` provides powerful helper methods to block execution until specific agent events occur, allowing you to write linear, story-like scripts without complex Triggers.
+## Use Cases
 
-### `waitFor`
-Use this to pause your script until a specific condition is met (e.g., a plan is generated).
+### Create a Session from a Google Doc
 
-```javascript
-function runInteractiveSession() {
-  var session = JulesApp.createSession({ ... });
-  console.log("Session started. Waiting for plan...");
+This example shows how to create a Jules session from the text in a Google Document. This is useful for turning meeting notes or project requirements directly into development tasks.
 
-  // Block execution until the agent generates a plan
-  // (Defaults to 60s timeout)
-  var activity = JulesApp.waitFor(session.id, JulesApp.until.planGenerated);
-
-  console.log("Plan ready with " + activity.planGenerated.plan.steps.length + " steps.");
-  
-  // Approve it immediately
-  JulesApp.approvePlan(session.id);
-}
-```
-
-### `monitor`
-Use this to stream events in real-time using a callback. This is perfect for logging progress to a Google Sheet or Slack.
+<details>
+<summary>Code Example</summary>
 
 ```javascript
-function watchSession() {
-  var sessionId = 'sessions/123...';
+function createTaskFromDocument() {
+  const doc = DocumentApp.getActiveDocument();
+  const text = doc.getBody().getText();
 
-  // Monitor for up to 2 minutes
-  JulesApp.monitor(sessionId, (activity) => {
-    
-    console.log(`[${activity.originator}] ${activity.description}`);
-
-    // Return true to stop monitoring early
-    if (JulesApp.until.finished(activity)) {
-      console.log("Session complete!");
-      return true; 
-    }
-
-  }, { timeoutMs: 120000 });
-}
-```
-
-## Examples
-
-### Create a Task from Google Docs Selection
-
-This example demonstrates how to build a productivity tool that takes highlighted text from a Google Doc and sends it to Jules as a new task.
-
-```javascript
-function createTaskFromHighlight() {
-  // 1. Get the user's selection
-  var selection = DocumentApp.getActiveDocument().getSelection();
-  if (!selection) {
-    DocumentApp.getUi().alert('Please highlight text first.');
+  if (text.trim().length === 0) {
+    DocumentApp.getUi().alert('The document is empty.');
     return;
   }
 
-  var text = "";
-  var elements = selection.getRangeElements();
-  for (var i = 0; i < elements.length; i++) {
-    var element = elements[i].getElement();
-    if (element.getType() === DocumentApp.ElementType.TEXT) {
-      text += element.getText() + " ";
-    }
-  }
-
   try {
-    // 2. Create session (Auth is handled automatically via Script Properties)
-    var session = JulesApp.createSession({
-      prompt: "Requirements: " + text,
-      title: "Doc Requirement Task",
+    const session = JulesApp.createSession({
+      prompt: "Based on the following document, create a development plan:\n\n" + text,
+      title: "Task from " + doc.getName(),
       sourceContext: { source: "sources/github/your-org/your-repo" }
     });
 
-    DocumentApp.getUi().alert('Jules is working on it!\nSession ID: ' + session.id);
+    DocumentApp.getUi().alert('Jules is working on it!\nSession ID: ' + session.name);
   } catch (e) {
     DocumentApp.getUi().alert('Error: ' + e.message);
   }
 }
 ```
+</details>
+
+### Load Session Activities into a Google Sheet
+
+This example demonstrates how to monitor a session and load its activities into a Google Sheet for real-time tracking and reporting.
+
+<details>
+<summary>Code Example</summary>
+
+```javascript
+function trackSessionInSheet() {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  sheet.clear();
+  sheet.appendRow(['Timestamp', 'Originator', 'Description']);
+
+  const sessionId = 'sessions/123...'; // Replace with a real session ID
+
+  JulesApp.monitor(sessionId, (activity) => {
+    sheet.appendRow([
+      activity.createTime,
+      activity.originator,
+      activity.description
+    ]);
+
+    // Stop monitoring if the session is finished
+    if (JulesApp.until.finished(activity)) {
+      return true;
+    }
+  }, { timeoutMs: 300000 }); // 5 minute timeout
+}
+```
+</details>
 
 ## API Reference
 
 ### Configuration
-*   `setApiKey(key)`: *Optional*. Manually sets the API key, overriding the `JULES_API_KEY` script property.
 
-### Sessions
-*   `createSession(config)`: Starts a new session.
-*   `getSession(idOrName)`: Retrieves details of an existing session.
-*   `listSessions(pageSize, pageToken)`: Lists recent sessions.
-
-### Polling & Helpers
-*   `waitFor(idOrName, predicate, timeoutMs?)`: Blocks until the predicate returns true. Returns the matching activity.
-*   `monitor(idOrName, callback, options?)`: Polls for new activities and runs the callback for each one.
-*   `until`: A collection of helper predicates:
-    *   `JulesApp.until.planGenerated`
-    *   `JulesApp.until.messaged` (Agent sent a message)
-    *   `JulesApp.until.completed` (Success)
-    *   `JulesApp.until.failed` (Error)
-    *   `JulesApp.until.finished` (Success or Error)
-
-### Activities & Actions
-*   `listSessionActivities(idOrName, pageSize?)`: Fetches the history of a session.
-*   `getActivity(name)`: Fetches a specific activity details.
-*   `sendMessage(idOrName, message)`: Sends a user reply to the agent.
-*   `approvePlan(idOrName)`: Approves the pending plan.
+| Method | Parameters | Returns | Description |
+| --- | --- | --- | --- |
+| `setApiKey` | `apiKey: string` | `void` | Manually sets the API key, overriding the `JULES_API_KEY` script property. |
 
 ### Sources
-*   `listSources(pageSize, pageToken)`: Lists connected sources (e.g., GitHub repositories).
-*   `getSource(idOrName)`: Gets details about a specific source.
+
+| Method | Parameters | Returns | Description |
+| --- | --- | --- | --- |
+| `listSources` | `pageSize?: number`, `pageToken?: string` | `ListResponse<Source>` | Lists connected sources (e.g., GitHub repositories). |
+| `getSource` | `idOrName: string` | `Source` | Gets details about a specific source. |
+
+### Sessions
+
+| Method | Parameters | Returns | Description |
+| --- | --- | --- | --- |
+| `createSession` | `config: CreateSessionRequest` | `Session` | Starts a new session. |
+| `getSession` | `idOrName: string` | `Session` | Retrieves details of an existing session. |
+| `listSessions` | `pageSize?: number`, `pageToken?: string` | `ListResponse<Session>` | Lists recent sessions. |
+
+### Activities
+
+| Method | Parameters | Returns | Description |
+| --- | --- | --- | --- |
+| `listSessionActivities` | `sessionIdOrName: string`, `pageSize?: number` | `ListResponse<Activity>` | Fetches the history of a session. |
+| `getActivity` | `activityIdOrName: string` | `Activity` | Fetches specific activity details. |
+
+### Actions
+
+| Method | Parameters | Returns | Description |
+| --- | --- | --- | --- |
+| `approvePlan` | `sessionIdOrName: string` | `void` | Approves the pending plan. |
+| `sendMessage` | `sessionIdOrName: string`, `message: string` | `void` | Sends a user reply to the agent. |
+
+### Polling & Helpers
+
+| Method | Parameters | Returns | Description |
+| --- | --- | --- | --- |
+| `monitor` | `sessionIdOrName: string`, `onActivity: (activity: Activity) => boolean \| void`, `options?: { timeoutMs?: number; intervalMs?: number }` | `void` | Polls for new activities and runs the callback for each one. |
+| `waitFor` | `sessionIdOrName: string`, `predicate: (act: Activity) => boolean`, `timeoutMs?: number` | `Activity` | Blocks until the predicate returns true. Returns the matching activity. |
+| `until` | - | `object` | A collection of helper predicates: `planGenerated`, `completed`, `failed`, `finished`, `messaged`. |
 
 For development instructions (building, testing, contributing), please see [CONTRIBUTING.md](CONTRIBUTING.md).
