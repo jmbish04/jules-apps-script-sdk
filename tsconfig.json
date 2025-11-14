@@ -1,12 +1,15 @@
 {
   "compilerOptions": {
-    "target": "ES2019",
-    "lib": ["ESNext"],
+    "target": "es2019",
+    "lib": ["es2019"],
     "module": "ESNext",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "strict": true,
     "esModuleInterop": true,
-    "types": ["google-apps-script"]
+    "skipLibCheck": true,
+    "types": ["google-apps-script"],
+    "removeComments": true
   },
-  "include": ["src/**/*"]
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules", "dist"]
 }

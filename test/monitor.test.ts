@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { mockUrlFetchApp } from './mocks'; // Your global mock setup
+import { mockUrlFetchApp } from './mocks';
 import * as JulesApp from '../src/index';
 
 describe('JulesApp Polling Logic', () => {
-  // 1. Time Travel Setup
+  // Time Travel Setup
   let fakeNow = 0;
   const realDateNow = Date.now;
 
@@ -84,7 +84,7 @@ describe('JulesApp Polling Logic', () => {
         getContentText: () => JSON.stringify({ activities: [] })
       });
 
-      const consoleSpy = vi.spyOn(console, 'log');
+      const consoleSpy = vi.spyOn(Logger, 'log');
 
       // Run with a 5000ms timeout, sleeping 1000ms each loop
       JulesApp.monitor('sessions/123', () => {}, { timeoutMs: 5000, intervalMs: 1000 });

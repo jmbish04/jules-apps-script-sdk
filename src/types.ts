@@ -1,4 +1,4 @@
-export interface JulesConfig {
+interface JulesConfig {
   apiKey: string;
 }
 
@@ -6,14 +6,14 @@ export interface JulesConfig {
  * API Request/Response Interfaces
  */
 
-export interface SourceContext {
+interface SourceContext {
   source: string; // e.g., "sources/github/owner/repo"
   githubRepoContext?: {
     startingBranch: string;
   };
 }
 
-export interface CreateSessionRequest {
+interface CreateSessionRequest {
   prompt: string;
   sourceContext: SourceContext;
   title?: string;
@@ -21,7 +21,7 @@ export interface CreateSessionRequest {
   automationMode?: 'AUTOMATION_MODE_UNSPECIFIED' | 'AUTO_CREATE_PR';
 }
 
-export interface Session {
+interface Session {
   name: string; // "sessions/{id}"
   id: string;
   title: string;
@@ -33,7 +33,7 @@ export interface Session {
   outputs?: Array<{ pullRequest?: { url: string; title: string } }>;
 }
 
-export interface Activity {
+interface Activity {
   name: string;
   id: string;
   description: string;
@@ -51,20 +51,20 @@ export interface Activity {
   artifacts?: Artifact[];
 }
 
-export interface Artifact {
+interface Artifact {
   changeSet?: { source: string; gitPatch: { unidiffPatch: string; suggestedCommitMessage: string } };
   bashOutput?: { command: string; output: string; exitCode: number };
   media?: { data: string; mimeType: string };
 }
 
-export interface ListResponse<T> {
+interface ListResponse<T> {
   sessions?: T[];
   sources?: T[];
   activities?: T[];
   nextPageToken?: string;
 }
 
-export interface Source {
+interface Source {
   name: string;
   id: string;
   githubRepo?: {
@@ -73,3 +73,5 @@ export interface Source {
     defaultBranch?: { displayName: string };
   };
 }
+
+type PaginationOptions = { pageSize: number; pageToken: string }

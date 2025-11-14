@@ -17,6 +17,11 @@ export const mockPropertiesService = {
 // Attach to the global scope so "UrlFetchApp" exists when your library runs
 global.UrlFetchApp = mockUrlFetchApp as any;
 global.PropertiesService = mockPropertiesService as any;
+global.Logger = {
+  log: console.log as any,
+  getLog: () => "",
+  clear: console.clear,
+};
 
 // Mock other GAS services if needed
 global.Utilities = {
