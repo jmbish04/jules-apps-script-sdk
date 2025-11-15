@@ -4,10 +4,39 @@ export function setApiKey(apiKey: string) {
   Client.setApiKey(apiKey);
 }
 
-export function listSources(pageSize: number = 10, pageToken?: string): ListResponse<Source> {
-  let query = `?pageSize=${pageSize}`;
-  if (pageToken) query += `&pageToken=${pageToken}`;
-  return Client.fetch<ListResponse<Source>>(`sources${query}`, 'get');
+/**
+ * Lists all available sources.
+ *
+ * @param {number} pageSize - The maximum number of sources to return.
+ * @param {string} [pageToken] - A page token, received from a previous `listSources` call.
+ * @param {boolean} [fetchAll=false] - Whether to fetch all pages.
+ * @returns {ListResponse<Source>} - A list of sources.
+ */
+export function listSources(
+  pageSize: number = 10,
+  pageToken?: string,
+  fetchAll: boolean = false
+): ListResponse<Source> {
+  if (!fetchAll) {
+    let query = `?pageSize=${pageSize}`;
+    if (pageToken) query += `&pageToken=${pageToken}`;
+    return Client.fetch<ListResponse<Source>>(`sources${query}`, 'get');
+  }
+
+  let allSources: Source[] = [];
+  let currentPageToken: string | undefined = pageToken;
+
+  do {
+    let query = `?pageSize=${pageSize}`;
+    if (currentPageToken) query += `&pageToken=${currentPageToken}`;
+    const response = Client.fetch<ListResponse<Source>>(`sources${query}`, 'get');
+    if (response.sources) {
+      allSources = allSources.concat(response.sources);
+    }
+    currentPageToken = response.nextPageToken;
+  } while (currentPageToken);
+
+  return { sources: allSources };
 }
 
 export function getSource(idOrName: string): Source {
@@ -24,19 +53,81 @@ export function getSession(idOrName: string): Session {
   return Client.fetch<Session>(name, 'get');
 }
 
-export function listSessions(pageSize: number = 10, pageToken?: string): ListResponse<Session> {
-  let query = `?pageSize=${pageSize}`;
-  if (pageToken) query += `&pageToken=${pageToken}`;
-  return Client.fetch<ListResponse<Session>>(`sessions${query}`, 'get');
+/**
+ * Lists all sessions.
+ *
+ * @param {number} pageSize - The maximum number of sessions to return.
+ * @param {string} [pageToken] - A page token, received from a previous `listSessions` call.
+ * @param {boolean} [fetchAll=false] - Whether to fetch all pages.
+ * @returns {ListResponse<Session>} - A list of sessions.
+ */
+export function listSessions(
+  pageSize: number = 10,
+  pageToken?: string,
+  fetchAll: boolean = false
+): ListResponse<Session> {
+  if (!fetchAll) {
+    let query = `?pageSize=${pageSize}`;
+    if (pageToken) query += `&pageToken=${pageToken}`;
+    return Client.fetch<ListResponse<Session>>(`sessions${query}`, 'get');
+  }
+
+  let allSessions: Session[] = [];
+  let currentPageToken: string | undefined = pageToken;
+
+  do {
+    let query = `?pageSize=${pageSize}`;
+    if (currentPageToken) query += `&pageToken=${currentPageToken}`;
+    const response = Client.fetch<ListResponse<Session>>(`sessions${query}`, 'get');
+    if (response.sessions) {
+      allSessions = allSessions.concat(response.sessions);
+    }
+    currentPageToken = response.nextPageToken;
+  } while (currentPageToken);
+
+  return { sessions: allSessions };
 }
 
 /**
  * --- ACTIVITIES ---
  */
-export function listSessionActivities(sessionIdOrName: string, pageSize: number = 30): ListResponse<Activity> {
+/**
+ * Lists all activities for a session.
+ *
+ * @param {string} sessionIdOrName - The session ID or name.
+ * @param {number} pageSize - The maximum number of activities to return.
+ * @param {string} [pageToken] - A page token, received from a previous `listSessionActivities` call.
+ * @param {boolean} [fetchAll=false] - Whether to fetch all pages.
+ * @returns {ListResponse<Activity>} - A list of activities.
+ */
+export function listSessionActivities(
+  sessionIdOrName: string,
+  pageSize: number = 30,
+  pageToken?: string,
+  fetchAll: boolean = false
+): ListResponse<Activity> {
   const sessionName = Client.normalizeId(sessionIdOrName, 'sessions');
-  const query = `?pageSize=${pageSize}`;
-  return Client.fetch<ListResponse<Activity>>(`${sessionName}/activities${query}`, 'get');
+
+  if (!fetchAll) {
+    let query = `?pageSize=${pageSize}`;
+    if (pageToken) query += `&pageToken=${pageToken}`;
+    return Client.fetch<ListResponse<Activity>>(`${sessionName}/activities${query}`, 'get');
+  }
+
+  let allActivities: Activity[] = [];
+  let currentPageToken: string | undefined = pageToken;
+
+  do {
+    let query = `?pageSize=${pageSize}`;
+    if (currentPageToken) query += `&pageToken=${currentPageToken}`;
+    const response = Client.fetch<ListResponse<Activity>>(`${sessionName}/activities${query}`, 'get');
+    if (response.activities) {
+      allActivities = allActivities.concat(response.activities);
+    }
+    currentPageToken = response.nextPageToken;
+  } while (currentPageToken);
+
+  return { activities: allActivities };
 }
 
 export function getActivity(activityIdOrName: string): Activity {

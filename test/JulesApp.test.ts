@@ -90,4 +90,87 @@ describe('JulesApp SDK', () => {
       );
     });
   });
+
+  describe('listSources', () => {
+    it('should paginate and fetch all sources when fetchAll is true', () => {
+      const mockResponsePage1 = {
+        getResponseCode: () => 200,
+        getContentText: () => JSON.stringify({
+          sources: [{ name: 'sources/1' }, { name: 'sources/2' }],
+          nextPageToken: 'page2'
+        })
+      };
+      const mockResponsePage2 = {
+        getResponseCode: () => 200,
+        getContentText: () => JSON.stringify({
+          sources: [{ name: 'sources/3' }, { name: 'sources/4' }]
+        })
+      };
+      mockUrlFetchApp.fetch.mockReturnValueOnce(mockResponsePage1).mockReturnValueOnce(mockResponsePage2);
+
+      const result = JulesApp.listSources(2, undefined, true);
+
+      expect(result.sources).toHaveLength(4);
+      expect(result.sources.map(s => s.name)).toEqual(['sources/1', 'sources/2', 'sources/3', 'sources/4']);
+      expect(mockUrlFetchApp.fetch).toHaveBeenCalledTimes(2);
+      expect(mockUrlFetchApp.fetch).toHaveBeenCalledWith(
+        'https://jules.googleapis.com/v1alpha/sources?pageSize=2',
+        expect.anything()
+      );
+      expect(mockUrlFetchApp.fetch).toHaveBeenCalledWith(
+        'https://jules.googleapis.com/v1alpha/sources?pageSize=2&pageToken=page2',
+        expect.anything()
+      );
+    });
+  });
+
+  describe('listSessions', () => {
+    it('should paginate and fetch all sessions when fetchAll is true', () => {
+      const mockResponsePage1 = {
+        getResponseCode: () => 200,
+        getContentText: () => JSON.stringify({
+          sessions: [{ name: 'sessions/1' }, { name: 'sessions/2' }],
+          nextPageToken: 'page2'
+        })
+      };
+      const mockResponsePage2 = {
+        getResponseCode: () => 200,
+        getContentText: () => JSON.stringify({
+          sessions: [{ name: 'sessions/3' }, { name: 'sessions/4' }]
+        })
+      };
+      mockUrlFetchApp.fetch.mockReturnValueOnce(mockResponsePage1).mockReturnValueOnce(mockResponsePage2);
+
+      const result = JulesApp.listSessions(2, undefined, true);
+
+      expect(result.sessions).toHaveLength(4);
+      expect(result.sessions.map(s => s.name)).toEqual(['sessions/1', 'sessions/2', 'sessions/3', 'sessions/4']);
+      expect(mockUrlFetchApp.fetch).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe('listSessionActivities', () => {
+    it('should paginate and fetch all activities when fetchAll is true', () => {
+      const mockResponsePage1 = {
+        getResponseCode: () => 200,
+        getContentText: () => JSON.stringify({
+          activities: [{ name: 'activities/1' }, { name: 'activities/2' }],
+          nextPageToken: 'page2'
+        })
+      };
+      const mockResponsePage2 = {
+        getResponseCode: () => 200,
+        getContentText: () => JSON.stringify({
+          activities: [{ name: 'activities/3' }, { name: 'activities/4' }]
+        })
+      };
+      mockUrlFetchApp.fetch.mockReturnValueOnce(mockResponsePage1).mockReturnValueOnce(mockResponsePage2);
+
+      const result = JulesApp.listSessionActivities('sessions/123', 2, undefined, true);
+
+      expect(result.activities).toHaveLength(4);
+      expect(result.activities.map(a => a.name)).toEqual(['activities/1', 'activities/2', 'activities/3', 'activities/4']);
+      expect(mockUrlFetchApp.fetch).toHaveBeenCalledTimes(2);
+    });
+  });
 });
