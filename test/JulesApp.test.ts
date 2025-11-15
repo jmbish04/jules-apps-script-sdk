@@ -22,34 +22,46 @@ describe('JulesApp Auth Resolution', () => {
 
 describe('JulesApp SDK', () => {
   const API_KEY = 'test-api-key';
+  const BASE_URL = 'https://jules.googleapis.com/v1alpha';
+
 
   beforeEach(() => {
     vi.clearAllMocks();
     JulesApp.setApiKey(API_KEY);
   });
 
+  // Helper to mock a successful response
+  const mockSuccess = (payload: any) => {
+    mockUrlFetchApp.fetch.mockReturnValue({
+      getResponseCode: () => 200,
+      getContentText: () => JSON.stringify(payload)
+    });
+  };
+
+  // Helper to mock an error response
+  const mockError = (code: number, message: string) => {
+    mockUrlFetchApp.fetch.mockReturnValue({
+      getResponseCode: () => code,
+      getContentText: () => JSON.stringify({ error: { message } })
+    });
+  };
+
+
   describe('createSession', () => {
-    it('should make a POST request to /sessions with correct headers', () => {
-      const mockResponse = {
-        getResponseCode: () => 200,
-        getContentText: () => JSON.stringify({
-          name: 'sessions/123',
-          id: '123',
-          state: 'QUEUED'
-        })
-      };
-      mockUrlFetchApp.fetch.mockReturnValue(mockResponse);
+    it('should POST with the correct payload and return a session', () => {
+      const session = { name: 'sessions/123', id: '123', state: 'QUEUED' };
+      mockSuccess(session);
 
       const result = JulesApp.createSession({
         prompt: 'Fix bug',
         sourceContext: { source: 'sources/github/a/b' }
       });
 
-      expect(result.id).toBe('123');
+      expect(result).toEqual(session);
 
       // Verify the underlying API call
       expect(mockUrlFetchApp.fetch).toHaveBeenCalledWith(
-        'https://jules.googleapis.com/v1alpha/sessions',
+        `${BASE_URL}/sessions`,
         expect.objectContaining({
           method: 'post',
           headers: { 'X-Goog-Api-Key': API_KEY },
@@ -59,15 +71,7 @@ describe('JulesApp SDK', () => {
     });
 
     it('should throw a readable error on 400 Bad Request', () => {
-      // Mock a failure
-      mockUrlFetchApp.fetch.mockReturnValue({
-        getResponseCode: () => 400,
-        getContentText: () => JSON.stringify({
-          error: { message: 'Invalid Source' }
-        })
-      });
-
-      // Expect it to throw
+      mockError(400, 'Invalid Source');
       expect(() => {
         JulesApp.createSession({ prompt: 'foo', sourceContext: { source: 'bad' } } as any);
       }).toThrow('JulesApp API Error [400]: Invalid Source');
@@ -75,19 +79,104 @@ describe('JulesApp SDK', () => {
   });
 
   describe('getSession', () => {
-    it('should normalize ID and fetch', () => {
-      mockUrlFetchApp.fetch.mockReturnValue({
-        getResponseCode: () => 200,
-        getContentText: () => JSON.stringify({ name: 'sessions/abc' })
-      });
-
-      // Pass "abc", expect "sessions/abc"
-      JulesApp.getSession('abc');
-
+    it('should return the session object', () => {
+      const session = { name: 'sessions/abc' };
+      mockSuccess(session);
+      const result = JulesApp.getSession('abc');
+      expect(result).toEqual(session);
       expect(mockUrlFetchApp.fetch).toHaveBeenCalledWith(
-        'https://jules.googleapis.com/v1alpha/sessions/abc',
+        `${BASE_URL}/sessions/abc`,
         expect.anything()
       );
+    });
+
+    it('should throw on API error', () => {
+      mockError(404, 'Not Found');
+      expect(() => JulesApp.getSession('abc')).toThrow('JulesApp API Error [404]: Not Found');
+    });
+  });
+
+  describe('listSources', () => {
+    it('should return a list of sources', () => {
+      const sources = { sources: [{ name: 'sources/a' }, { name: 'sources/b' }] };
+      mockSuccess(sources);
+      const result = JulesApp.listSources(5, 'token');
+      expect(result).toEqual(sources);
+      expect(mockUrlFetchApp.fetch).toHaveBeenCalledWith(
+        `${BASE_URL}/sources?pageSize=5&pageToken=token`,
+        expect.anything()
+      );
+    });
+
+    it('should throw on API error', () => {
+      mockError(500, 'Server Error');
+      expect(() => JulesApp.listSources()).toThrow('JulesApp API Error [500]: Server Error');
+    });
+  });
+
+  describe('getSource', () => {
+    it('should return the source object', () => {
+      const source = { name: 'sources/abc' };
+      mockSuccess(source);
+      const result = JulesApp.getSource('abc');
+      expect(result).toEqual(source);
+      expect(mockUrlFetchApp.fetch).toHaveBeenCalledWith(`${BASE_URL}/sources/abc`, expect.anything());
+    });
+  });
+
+  describe('listSessions', () => {
+    it('should return a list of sessions', () => {
+      const sessions = { sessions: [{ name: 'sessions/a' }] };
+      mockSuccess(sessions);
+      const result = JulesApp.listSessions(10, 'token2');
+      expect(result).toEqual(sessions);
+      expect(mockUrlFetchApp.fetch).toHaveBeenCalledWith(`${BASE_URL}/sessions?pageSize=10&pageToken=token2`, expect.anything());
+    });
+  });
+
+  describe('listSessionActivities', () => {
+    it('should return a list of activities', () => {
+      const activities = { activities: [{ name: 'sessions/s/activities/a' }] };
+      mockSuccess(activities);
+      const result = JulesApp.listSessionActivities('sess_123', 25);
+      expect(result).toEqual(activities);
+      expect(mockUrlFetchApp.fetch).toHaveBeenCalledWith(`${BASE_URL}/sessions/sess_123/activities?pageSize=25`, expect.anything());
+    });
+  });
+
+  describe('getActivity', () => {
+    it('should return an activity object', () => {
+      const activity = { name: 'sessions/s/activities/a' };
+      mockSuccess(activity);
+      const result = JulesApp.getActivity('sessions/s/activities/a');
+      expect(result).toEqual(activity);
+      expect(mockUrlFetchApp.fetch).toHaveBeenCalledWith(`${BASE_URL}/sessions/s/activities/a`, expect.anything());
+    });
+  });
+
+  describe('approvePlan', () => {
+    it('should not throw on success', () => {
+      mockSuccess({});
+      JulesApp.approvePlan('sess_456');
+      expect(mockUrlFetchApp.fetch).toHaveBeenCalledWith(`${BASE_URL}/sessions/sess_456:approvePlan`, expect.anything());
+    });
+
+    it('should throw on API error', () => {
+      mockError(403, 'Permission Denied');
+      expect(() => JulesApp.approvePlan('sess_456')).toThrow('JulesApp API Error [403]: Permission Denied');
+    });
+  });
+
+  describe('sendMessage', () => {
+    it('should not throw on success', () => {
+      mockSuccess({});
+      JulesApp.sendMessage('sess_789', 'Hello');
+      expect(mockUrlFetchApp.fetch).toHaveBeenCalledWith(`${BASE_URL}/sessions/sess_789:sendMessage`, expect.anything());
+    });
+
+    it('should throw on API error', () => {
+      mockError(400, 'Invalid session state');
+      expect(() => JulesApp.sendMessage('sess_789', 'Hello')).toThrow('JulesApp API Error [400]: Invalid session state');
     });
   });
 
