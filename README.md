@@ -127,6 +127,10 @@ function trackSessionInSheet() {
 ```
 </details>
 
+## Integration Patterns
+
+For more advanced examples and workflows that combine Jules with other Google Workspace APIs, please see the [Integration Patterns](PATTERNS.md) guide.
+
 ## API Reference
 
 ### Configuration
