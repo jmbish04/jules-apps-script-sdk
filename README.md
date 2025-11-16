@@ -17,7 +17,10 @@ function startJulesSession() {
   const session = JulesApp.createSession({
     prompt: "Refactor the user login module.",
     sourceContext: {
-      source: "sources/github/your-org/your-repo"
+      source: "sources/github/<username>/<repo>",
+      githubRepoContext: {
+        startingBranch: 'main' // or whatever repo you need
+      }
     }
   });
 
@@ -85,7 +88,12 @@ function createTaskFromDocument() {
     const session = JulesApp.createSession({
       prompt: "Based on the following document, create a development plan:\n\n" + text,
       title: "Task from " + doc.getName(),
-      sourceContext: { source: "sources/github/your-org/your-repo" }
+      sourceContext: {
+        source: "sources/github/<username>/<repo>",
+        githubRepoContext: {
+          startingBranch: 'main' // or whatever repo you need
+        }
+      }
     });
 
     DocumentApp.getUi().alert('Jules is working on it!\nSession ID: ' + session.name);

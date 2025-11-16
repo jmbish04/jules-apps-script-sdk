@@ -35,7 +35,13 @@ function createWebPageFromEmails() {
   // 3. Jules Prompt
   const session = JulesApp.createSession({
     prompt: `Summarize the following email updates into a single HTML report page. The page should have a main title, a brief summary paragraph, and then a bulleted list of key points from all emails.\\n\\n${emailContents}`,
-    title: 'Weekly Email Summary Report'
+    title: 'Weekly Email Summary Report',
+    sourceContext: {
+      source: "sources/github/<username>/<repo>",
+      githubRepoContext: {
+        startingBranch: 'main' // or whatever repo you need
+      }
+    }
   });
 
   console.log(`Session started: ${session.url}`);
@@ -89,7 +95,13 @@ function createHtmlReportFromSheet() {
   // 3. Jules Prompt
   const session = JulesApp.createSession({
     prompt: `Take the following JSON data and create a styled HTML report. The report should be a table with a header row. Add a title "Inventory Status". Data:\\n\\n${json}`,
-    title: 'Inventory HTML Report'
+    title: 'Inventory HTML Report',
+    sourceContext: {
+      source: "sources/github/<username>/<repo>",
+      githubRepoContext: {
+        startingBranch: 'main' // or whatever repo you need
+      }
+    }
   });
 
   console.log(`Session started: ${session.url}`);
