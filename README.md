@@ -1,11 +1,6 @@
 # JulesApp SDK for Google Apps Script
 
-A powerful, idiomatic client library for accessing the Jules API directly from Google Apps Script. Automate your software development workflows, manage sessions, and integrate Jules's intelligence into Google Docs, Sheets, Slack bots, and more.
-
-**Key Features:**
-*   **Zero-Config Auth:** Handles API keys securely via Script Properties.
-*   **Native Polling:** Native `waitFor` and `monitor` methods allow for synchronous event handling within the Apps Script execution model.
-*   **Type-Safe:** Distributed as a standard GAS library with comprehensive JSDoc.
+Automate tasks to Jules directly from Google Apps Script. Automate your software development workflows, manage sessions, and integrate Jules's intelligence into Google Docs, Sheets, and more.
 
 ## Core Usage
 
@@ -46,11 +41,11 @@ To use this SDK in your Google Apps Script project:
 1.  Open your project in the Apps Script editor.
 2.  Click **Libraries (+)** in the left sidebar.
 3.  Paste the Script ID:
-    **`1Qnm6YgwvY2gmtnPQuC8mtH8I9rbIQdC0MTgO466P4cn1Jk-CE52YWMVg`**
+    **`1fT7WB1r94QCHdX-jRn4JVQ41qeUdSTY887BqBoCtXjXUDbbGiP9NHgUr`**
 4.  Click **Look up**.
 5.  Select the latest version and click **Add**.
 
-### 2. Configure API Key (Recommended)
+### 2. Configure API Key
 The most secure way to use JulesApp is to store your key in the project settings. The library will automatically detect it.
 
 1.  Click the **Project Settings** (Gear Icon ⚙️) on the left sidebar.
@@ -59,11 +54,12 @@ The most secure way to use JulesApp is to store your key in the project settings
     *   **Property**: `JULES_API_KEY`
     *   **Value**: `YOUR_ACTUAL_API_KEY`
 4.  Click **Save script properties**.
+5.  Call `JulesApp.setApiKey()`
 
-Once the property is set, you can start using the library without initialization code.
-
-*Alternatively, you can set the key programmatically using `JulesApp.setApiKey('...')`.*
-
+```js
+const API_KEY = PropertiesService.getScriptProperties().getProperty('JULES_API_KEY');
+JulesApp.setApiKey(API_KEY);`,
+```
 
 ## Use Cases
 
@@ -143,45 +139,46 @@ For more advanced examples and workflows that combine Jules with other Google Wo
 
 ### Configuration
 
-| Method | Parameters | Returns | Description |
-| --- | --- | --- | --- |
-| `setApiKey` | `apiKey: string` | `void` | Manually sets the API key, overriding the `JULES_API_KEY` script property. |
+*   `setApiKey(apiKey: string)`
+    Manually sets the API key, overriding the `JULES_API_KEY` script property.
 
 ### Sources
 
-| Method | Parameters | Returns | Description |
-| --- | --- | --- | --- |
-| `listSources` | `pageSize?: number`, `pageToken?: string` | `ListResponse<Source>` | Lists connected sources (e.g., GitHub repositories). |
-| `getSource` | `idOrName: string` | `Source` | Gets details about a specific source. |
+*   `listSources(pageSize?: number, pageToken?: string) → ListResponse<Source>`
+    Lists connected sources (e.g., GitHub repositories).
+*   `getSource(idOrName: string) → Source`
+    Gets details about a specific source.
 
 ### Sessions
 
-| Method | Parameters | Returns | Description |
-| --- | --- | --- | --- |
-| `createSession` | `config: CreateSessionRequest` | `Session` | Starts a new session. |
-| `getSession` | `idOrName: string` | `Session` | Retrieves details of an existing session. |
-| `listSessions` | `pageSize?: number`, `pageToken?: string` | `ListResponse<Session>` | Lists recent sessions. |
+*   `createSession(config: CreateSessionRequest) → Session`
+    Starts a new session.
+*   `getSession(idOrName: string) → Session`
+    Retrieves details of an existing session.
+*   `listSessions(pageSize?: number, pageToken?: string) → ListResponse<Session>`
+    Lists recent sessions.
 
 ### Activities
 
-| Method | Parameters | Returns | Description |
-| --- | --- | --- | --- |
-| `listSessionActivities` | `sessionIdOrName: string`, `pageSize?: number` | `ListResponse<Activity>` | Fetches the history of a session. |
-| `getActivity` | `activityIdOrName: string` | `Activity` | Fetches specific activity details. |
+*   `listSessionActivities(sessionIdOrName: string, pageSize?: number) → ListResponse<Activity>`
+    Fetches the history of a session.
+*   `getActivity(activityIdOrName: string) → Activity`
+    Fetches specific activity details.
 
 ### Actions
 
-| Method | Parameters | Returns | Description |
-| --- | --- | --- | --- |
-| `approvePlan` | `sessionIdOrName: string` | `void` | Approves the pending plan. |
-| `sendMessage` | `sessionIdOrName: string`, `message: string` | `void` | Sends a user reply to the agent. |
+*   `approvePlan(sessionIdOrName: string)`
+    Approves the pending plan.
+*   `sendMessage(sessionIdOrName: string, message: string)`
+    Sends a user reply to the agent.
 
 ### Polling & Helpers
 
-| Method | Parameters | Returns | Description |
-| --- | --- | --- | --- |
-| `monitor` | `sessionIdOrName: string`, `onActivity: (activity: Activity) => boolean \| void`, `options?: { timeoutMs?: number; intervalMs?: number }` | `void` | Polls for new activities and runs the callback for each one. |
-| `waitFor` | `sessionIdOrName: string`, `predicate: (act: Activity) => boolean`, `timeoutMs?: number` | `Activity` | Blocks until the predicate returns true. Returns the matching activity. |
-| `until` | - | `object` | A collection of helper predicates: `planGenerated`, `completed`, `failed`, `finished`, `messaged`. |
+*   `monitor(sessionIdOrName: string, onActivity: (activity: Activity) => boolean | void, options?: { timeoutMs?: number; intervalMs?: number })`
+    Polls for new activities and runs the callback for each one.
+*   `waitFor(sessionIdOrName: string, predicate: (act: Activity) => boolean, timeoutMs?: number) → Activity`
+    Blocks until the predicate returns true. Returns the matching activity.
+*   `until`
+    A collection of helper predicates: `planGenerated`, `completed`, `failed`, `finished`, `messaged`.
 
 For development instructions (building, testing, contributing), please see [CONTRIBUTING.md](CONTRIBUTING.md).
